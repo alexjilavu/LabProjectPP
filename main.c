@@ -29,22 +29,27 @@ void xorShift(unsigned int seed, int size)
         printf("%u\n", r);
     }
 }
-struct image loadBmp(char *fileName)
+struct image loadBMP(char *fileName)
 {
     FILE *filePointer;
     filePointer = fopen(fileName, "rb");
+    struct image nul;
+    nul.width = nul.height = 0;
     if(filePointer == NULL) {
         printf("There was an error while opening the file");
+        return nul;
     }
     int i, j;
     struct image image;
     image.header = malloc(54 * sizeof(unsigned char));
-    fread(&image.header[i], sizeof(unsigned char), 53, filePointer);
+    for(i = 0; i < 53; i++)
+        fread(&image.header[i], sizeof(unsigned char), 1, filePointer);
 
     fseek(filePointer, 18, SEEK_SET);
 
     fread(&image.width, sizeof(unsigned int), 1, filePointer);
     fread(&image.height, sizeof(unsigned int), 1, filePointer);
+    printf("%d %d", image.width, image.height);
     if(image.width % 4 == 0)
         image.padding = 0;
     else
@@ -61,17 +66,37 @@ struct image loadBmp(char *fileName)
         }
         fseek(filePointer, image.padding, SEEK_CUR);
     }
+    fclose(filePointer);
     return image;
 
 }
 
+void createBMP(char *fileName, struct image image)
+{
+    FILE* filePointer;
+    filePointer = fopen(fileName, "wb");
+    if(filePointer == NULL){
+        printf("There was an error while opening the file");
+        return ;}
+    int i, j;
+    for(i = 0; i < 54; i++)
+        fwrite(&image.header[i], sizeof(unsigned char), 1, filePointer);
+    for(i = 0; i < image.height; i++){
+        for(j = 0; j < image.width; j++){
+            fwrite(&image.content[i * j].b, sizeof(unsigned char), 1, filePointer);
+            fwrite(&image.content[i * j].g, sizeof(unsigned char), 1, filePointer);
+            fwrite(&image.content[i * j].r, sizeof(unsigned char), 1, filePointer);
+        }
+        fwrite(0, sizeof(unsigned char), image.padding, filePointer);
+    }
+    fclose(filePointer);
+}
 
 
 int main()
 {
-    int imageWidth, imageHeight;
-    struct image image = loadBmp("E:\\INFO\\FMI\\ProgProced\\ProectLab\\peppers.bmp");
-    printf("%d %d", image.width, image.height);
+    struct image image = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp");
+    createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\testpeppers.bmp", image);
 
 
     return 0;
