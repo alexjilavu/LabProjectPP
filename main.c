@@ -2,11 +2,18 @@
 #include <stdlib.h>
 // definim o structura de date care permite memorarea unui pixel
 
-typedef struct pixel
+struct pixel
 {
     unsigned char r;
     unsigned char g;
     unsigned char b;
+};
+
+struct image
+{
+    unsigned char *header;
+    struct pixel *content;
+    unsigned int width, height, padding;
 };
 
 
@@ -22,53 +29,50 @@ void xorShift(unsigned int seed, int size)
         printf("%u\n", r);
     }
 }
-
-struct pixel* loadBMP(char *fileName, struct pixel *p) {
+struct image loadBmp(char *fileName)
+{
     FILE *filePointer;
     filePointer = fopen(fileName, "rb");
-    if (filePointer == NULL) {
+    if(filePointer == NULL) {
         printf("There was an error while opening the file");
-        return NULL;
     }
-    printf("AM AJUNS");
-    unsigned int imageWidth, imageHeight;
-    unsigned int padding, i, j;
-    unsigned char curentByte;
+    int i, j;
+    struct image image;
+    image.header = malloc(54 * sizeof(unsigned char));
+    fread(&image.header[i], sizeof(unsigned char), 53, filePointer);
 
-    // citim cele doua dimensiuni ale imaginii din header
-    printf("AM AJUNS");
     fseek(filePointer, 18, SEEK_SET);
-    printf("AM AJUNS");
-    fread(&imageWidth, sizeof(unsigned int), 1, filePointer);
-    fread(&imageHeight, sizeof(unsigned int), 1, filePointer);
-    printf("%d %d", imageWidth, imageHeight);
-    // verificam daca exista biti pentru padding
 
-    if (imageWidth % 4 == 0)
-        padding = 0;
+    fread(&image.width, sizeof(unsigned int), 1, filePointer);
+    fread(&image.height, sizeof(unsigned int), 1, filePointer);
+    if(image.width % 4 == 0)
+        image.padding = 0;
     else
-        padding = 4 - (imageWidth % 4);
-
-    // trecem de primii 54 biti de header
+        image.padding = 4 - (image.width % 4);
 
     fseek(filePointer, 54, SEEK_SET);
-    // declaram tabloul in care vom stoca imaginea liniarizata
+    image.content = malloc(image.width * image.height * sizeof(struct pixel));
 
-    p = malloc(imageHeight * imageWidth * sizeof(struct pixel));
-
-    for (i = 0; i < imageHeight; i++) {
-        for (j = 0; j < imageWidth; j++) {
-            fread(&p[i * j].b, sizeof(unsigned char), 1, filePointer);
-            fread(&p[i * j].g, sizeof(unsigned char), 1, filePointer);
-            fread(&p[i * j].r, sizeof(unsigned char), 1, filePointer);
+    for(i = 0; i < image.height; i++) {
+        for (j = 0; j < image.width; j++) {
+            fread(&image.content[i * j].b, sizeof(unsigned char), 1, filePointer);
+            fread(&image.content[i * j].g, sizeof(unsigned char), 1, filePointer);
+            fread(&image.content[i * j].r, sizeof(unsigned char), 1, filePointer);
         }
-        fseek(filePointer, padding, SEEK_CUR);
+        fseek(filePointer, image.padding, SEEK_CUR);
     }
-    return p;
+    return image;
+
 }
+
+
+
 int main()
 {
-    //xorShift(1003210, 100);
-    struct pixel *p = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp", p);
+    int imageWidth, imageHeight;
+    struct image image = loadBmp("E:\\INFO\\FMI\\ProgProced\\ProectLab\\peppers.bmp");
+    printf("%d %d", image.width, image.height);
+
+
     return 0;
 }
