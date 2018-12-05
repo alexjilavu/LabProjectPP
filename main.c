@@ -13,7 +13,7 @@ struct image
 {
     unsigned char *header;
     struct pixel *content;
-    unsigned int width, height, padding;
+    unsigned int width, height, padding, contentSize;
 };
 
 
@@ -33,6 +33,7 @@ struct image loadBMP(char *fileName)
 {
     FILE *filePointer;
     filePointer = fopen(fileName, "rb");
+    FILE *filePointerCopy = fopen("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\testpeppers.bmp", "wb");
     struct image nul;
     nul.width = nul.height = 0;
     if(filePointer == NULL) {
@@ -42,8 +43,9 @@ struct image loadBMP(char *fileName)
     int i, j;
     struct image image;
     image.header = malloc(54 * sizeof(unsigned char));
-    for(i = 0; i < 53; i++)
+    for(i = 0; i < 54; i++)
         fread(&image.header[i], sizeof(unsigned char), 1, filePointer);
+        //fwrite(&image.header[i], sizeof(unsigned char), 1, filePointerCopy);}
 
     fseek(filePointer, 18, SEEK_SET);
 
@@ -58,11 +60,13 @@ struct image loadBMP(char *fileName)
     fseek(filePointer, 54, SEEK_SET);
     image.content = malloc(image.width * image.height * sizeof(struct pixel));
 
+    image.contentSize = 0;
     for(i = 0; i < image.height; i++) {
         for (j = 0; j < image.width; j++) {
-            fread(&image.content[i * j].b, sizeof(unsigned char), 1, filePointer);
-            fread(&image.content[i * j].g, sizeof(unsigned char), 1, filePointer);
-            fread(&image.content[i * j].r, sizeof(unsigned char), 1, filePointer);
+            fread(&image.content[image.contentSize].b, sizeof(unsigned char), 1, filePointer);
+            fread(&image.content[image.contentSize].g, sizeof(unsigned char), 1, filePointer);
+            fread(&image.content[image.contentSize].r, sizeof(unsigned char), 1, filePointer);
+            image.contentSize++;
         }
         fseek(filePointer, image.padding, SEEK_CUR);
     }
@@ -81,11 +85,13 @@ void createBMP(char *fileName, struct image image)
     int i, j;
     for(i = 0; i < 54; i++)
         fwrite(&image.header[i], sizeof(unsigned char), 1, filePointer);
+    int curentPosition = 0;
     for(i = 0; i < image.height; i++){
         for(j = 0; j < image.width; j++){
-            fwrite(&image.content[i * j].b, sizeof(unsigned char), 1, filePointer);
-            fwrite(&image.content[i * j].g, sizeof(unsigned char), 1, filePointer);
-            fwrite(&image.content[i * j].r, sizeof(unsigned char), 1, filePointer);
+            fwrite(&image.content[curentPosition].b, sizeof(unsigned char), 1, filePointer);
+            fwrite(&image.content[curentPosition].g, sizeof(unsigned char), 1, filePointer);
+            fwrite(&image.content[curentPosition].r, sizeof(unsigned char), 1, filePointer);
+            curentPosition++;
         }
         fwrite(0, sizeof(unsigned char), image.padding, filePointer);
     }
