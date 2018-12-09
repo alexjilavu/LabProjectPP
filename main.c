@@ -42,7 +42,6 @@ unsigned int* xorShift(int seed, int size)
         randomSequence[sizeOfSeq] = r;
         sizeOfSeq++;
     }
-
     return randomSequence;
 }
 struct image loadBMP(char *fileName)
@@ -226,7 +225,6 @@ void chiSquaredValues(char* filePath) {
     struct image image = loadBMP(filePath);
     int pixelSize = image.width * image.height;
     float fValue = (image.width * image.height) / 256.0;
-    printf("%f\n", fValue);
     float *frecvRed, *frecvGreen, *frecvBlue;
     frecvRed = malloc(256 * sizeof(float));
     frecvBlue = malloc(256 * sizeof(float));
@@ -243,12 +241,13 @@ void chiSquaredValues(char* filePath) {
         chiGreen += ((frecvGreen[i] - fValue) * (frecvGreen[i] - fValue)) / fValue;
         chiBlue += ((frecvBlue[i] - fValue) * (frecvBlue[i] - fValue)) / fValue;
     }
+    free(frecvBlue);
+    free(frecvRed);
+    free(frecvGreen);
     printf("chi-squared-red = %.2f \n chi-squared-green = %.2f \n chi-squared-blue = %.2f", chiRed, chiGreen, chiBlue);
 }
 int main()
 {
-    struct image image = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp");
-
     criptBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp",
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\cript.bmp",
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");

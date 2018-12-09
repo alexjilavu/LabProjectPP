@@ -12,11 +12,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="af334be4-e5a7-4765-9dc2-f6d34da41d72" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ProiectLab.dir/main.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ProiectLab.dir/main.c.obj" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ProiectLab.dir/objects.a" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ProiectLab.dir/objects.a" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/ProiectLab.exe" afterPath="$PROJECT_DIR$/cmake-build-debug/ProiectLab.exe" />
-      <change beforePath="$PROJECT_DIR$/cript.bmp" afterPath="$PROJECT_DIR$/cript.bmp" />
       <change beforePath="$PROJECT_DIR$/main.c" afterPath="$PROJECT_DIR$/main.c" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
@@ -33,8 +28,8 @@
       <file leaf-file-name="main.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="300">
-              <caret line="249" column="4" lean-forward="true" selection-start-line="249" selection-start-column="4" selection-end-line="249" selection-end-column="4" />
+            <state relative-caret-position="75">
+              <caret line="227" column="45" lean-forward="true" selection-start-line="227" selection-start-column="45" selection-end-line="227" selection-end-column="45" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -156,12 +151,12 @@
       <workItem from="1543955792748" duration="24715000" />
       <workItem from="1544123303513" duration="9468000" />
       <workItem from="1544257491191" duration="622000" />
-      <workItem from="1544355179349" duration="2975000" />
+      <workItem from="1544355179349" duration="3290000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="54345000" />
+    <option name="totallyTimeSpent" value="54660000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-9" y="-9" width="1938" height="1048" extended-state="6" />
@@ -417,8 +412,8 @@
     <entry file="file://$PROJECT_DIR$/crippeppers.bmp" />
     <entry file="file://$PROJECT_DIR$/main.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="300">
-          <caret line="249" column="4" lean-forward="true" selection-start-line="249" selection-start-column="4" selection-end-line="249" selection-end-column="4" />
+        <state relative-caret-position="75">
+          <caret line="227" column="45" lean-forward="true" selection-start-line="227" selection-start-column="45" selection-end-line="227" selection-end-column="45" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
