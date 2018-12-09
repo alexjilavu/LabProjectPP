@@ -8,17 +8,16 @@ struct pixel
     unsigned char g;
     unsigned char b;
 };
+union binarInt{
+    int x;
+    unsigned char byteRepr[4];
+};
 
 struct image
 {
     unsigned char *header;
     struct pixel *content;
     unsigned int width, height, padding, contentSize;
-};
-
-struct array
-{
-    unsigned int *randSequence, sizeOfSeq;
 };
 
 void swap (int *a, int *b)
@@ -28,22 +27,23 @@ void swap (int *a, int *b)
     *b = temp;
 }
 
-struct array xorShift(unsigned int seed, int size)
+unsigned int* xorShift(int seed, int size)
 {
     unsigned int r = seed;
     int k;
-    struct array rand;
-    rand.randSequence = malloc(size * sizeof(unsigned int));
-    rand.sizeOfSeq = 0;
-    for(k = 0; k < size; k++)
+    unsigned int* randomSequence = malloc(size * sizeof(unsigned int));
+    int sizeOfSeq = 1;
+    randomSequence[0] = seed;
+    for(k = 1; k < size; k++)
     {
         r = r ^ r << 13;
         r = r ^ r >> 17;
         r = r ^ r << 5;
-        rand.randSequence[rand.sizeOfSeq] = r;
-        rand.sizeOfSeq++;
+        randomSequence[sizeOfSeq] = r;
+        sizeOfSeq++;
     }
-    return rand;
+
+    return randomSequence;
 }
 struct image loadBMP(char *fileName)
 {
@@ -53,6 +53,7 @@ struct image loadBMP(char *fileName)
     nul.width = nul.height = 0;
     if(filePointer == NULL) {
         printf("There was an error while opening the file");
+        fclose(filePointer);
         return nul;
     }
     int i, j;
@@ -94,6 +95,7 @@ void createBMP(char *fileName, struct image image)
     filePointer = fopen(fileName, "wb");
     if(filePointer == NULL){
         printf("There was an error while opening the file");
+        fclose(filePointer);
         return ;}
     int i, j;
     for(i = 0; i < 54; i++)
@@ -110,81 +112,150 @@ void createBMP(char *fileName, struct image image)
     }
     fclose(filePointer);
 }
-
-void cripBMP(char *fileSource, char *fileDestination, char *fileKey)
+void criptBMP(char *fileSource, char *fileDestination, char *fileKey)
 {
-    FILE* sourcePointer = fopen(fileSource, "rb");
-    if(sourcePointer == NULL)
+    FILE *fin = fopen(fileKey, "r");
+    if(fin == NULL)
     {
-        printf("Calea imaginii sursa este incorecta");
+        printf("A aparut o eroare la deschiderea fisierului cu cheia");
+        fclose(fin);
         return ;
     }
-    FILE* destinationPointer = fopen(fileDestination, "wb");
-    if(destinationPointer == NULL)
+    int randomSeed, startingValue;
+    fscanf(fin, "%d %d", &randomSeed, &startingValue);
+    fclose(fin);
+    struct image image = loadBMP(fileSource);
+    struct image cripImage = image;
+    int pixelSize = image.width * image.height;
+    cripImage.content = malloc(pixelSize * sizeof(struct pixel));
+    unsigned int* randomSequence = xorShift(randomSeed, pixelSize * 2);
+    unsigned int* permutation = malloc(pixelSize * sizeof(unsigned int));
+
+    int i, j;
+    for(i = 0; i < pixelSize; i++)
+        permutation[i] = i;
+    unsigned int aux;
+    for(i = pixelSize - 1; i > 0; i--)
     {
-        printf("Calea imaginii destinatie este incorecta");
-        return ;
+        j = randomSequence[i] % (i + 1);
+        swap(&permutation[i], &permutation[j]);
     }
+    for(i = 0; i < pixelSize; i++)
+        cripImage.content[permutation[i]] = image.content[i];
+    //createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\cript.bmp", cripImage);
+    union binarInt key, random;
+    key.x = startingValue;
+    random.x = randomSequence[pixelSize];
+    cripImage.content[0].r = key.byteRepr[2] ^ cripImage.content[0].r ^ random.byteRepr[2];
+    cripImage.content[0].g = key.byteRepr[1] ^ cripImage.content[0].g ^ random.byteRepr[1];
+    cripImage.content[0].b = key.byteRepr[0] ^ cripImage.content[0].b ^ random.byteRepr[0];
+    for(i = 1; i < pixelSize; i++)
+    {
+        random.x = randomSequence[pixelSize + i];
+        cripImage.content[i].r = cripImage.content[i - 1].r ^ cripImage.content[i].r ^ random.byteRepr[2];
+        cripImage.content[i].g = cripImage.content[i - 1].g ^ cripImage.content[i].g ^ random.byteRepr[1];
+        cripImage.content[i].b = cripImage.content[i - 1].b ^ cripImage.content[i].b ^ random.byteRepr[0];
+    }
+    createBMP(fileDestination, cripImage);
+    free(cripImage.content);
+    free(image.content);
+    free(randomSequence);
+    free(permutation);
+}
+
+void decriptBMP(char* fileSource, char* fileCripted, char* fileKey)
+{
     FILE* fin = fopen(fileKey, "r");
     if(fin == NULL)
     {
-        printf("Calea fisierului in care se afla cheia este incorecta");
+        printf("Eroare la deschiderea fisierului cu cheia secreta");
+        fclose(fin);
         return ;
     }
-    struct image image = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp");
-    unsigned int randomSeed, startingValue;
+    struct image criptedImage = loadBMP(fileCripted);
+    struct image finalImage = criptedImage;
+    int startingValue, randomSeed;
+    int pixelSize = criptedImage.width * criptedImage.height;
+    finalImage.content = malloc(pixelSize * sizeof(struct pixel));
     fscanf(fin, "%d %d", &randomSeed, &startingValue);
-    struct array rand = xorShift(randomSeed, image.width * image.height * 2);
-    int i, j = 0, k;
-    struct image criptedImage = image;
-    criptedImage.content = malloc(criptedImage.width * criptedImage.height * sizeof(struct pixel));
-    struct array perm;
-    perm.sizeOfSeq = rand.sizeOfSeq;
-    perm.randSequence = malloc(image.height * image.width * sizeof(unsigned int));
-    for(i = 0; i < image.width * image.height; i++)
-        perm.randSequence[i] = i;
-    for(i = image.height * image.width - 1; i > 0; i--)
+    fclose(fin);
+    unsigned int *randomSequence = xorShift(randomSeed, 2 * pixelSize);
+    int i, j;
+    unsigned int *permutation = malloc(pixelSize * sizeof(unsigned int));
+    for(i = 0; i < pixelSize; i++)
+        permutation[i] = i;
+    for(i = pixelSize - 1; i > 0; i--)
     {
-        j = rand.randSequence[i] % (i + 1);
-        swap(&perm.randSequence[i], &perm.randSequence[j]);
+        j = randomSequence[i] % (i + 1);
+        swap(&permutation[i], &permutation[j]);
     }
+    unsigned int* inversPerm = malloc(pixelSize * sizeof(unsigned int));
 
-    for(k = 0; k < image.width * image.height - 1; k++)
-    {
-        criptedImage.content[perm.randSequence[k]] = image.content[k];
-    }
+    for(i = 0; i < pixelSize; i++)
+        inversPerm[permutation[i]] = i;
     union{
         int x;
         unsigned char byteRepr[4];
-    } lastKey, random, curentPerm;
-    lastKey.x = startingValue;
-    random.x = rand.randSequence[criptedImage.height * criptedImage.width];
-    curentPerm.x = perm.randSequence[0];
-    criptedImage.content[0].r = lastKey.byteRepr[2] ^ curentPerm.byteRepr[2] ^ random.byteRepr[2];
-    criptedImage.content[0].g = lastKey.byteRepr[1] ^ curentPerm.byteRepr[1] ^ random.byteRepr[1];
-    criptedImage.content[0].b = lastKey.byteRepr[0] ^ curentPerm.byteRepr[0] ^ random.byteRepr[0];
-
-    for(k = 1; k < criptedImage.width * criptedImage.height - 1; k++)
+    }key, random;
+    key.x = startingValue;
+    random.x = randomSequence[pixelSize];
+    finalImage.content[0].r = key.byteRepr[2] ^ criptedImage.content[0].r ^ random.byteRepr[2];
+    finalImage.content[0].g = key.byteRepr[1] ^ criptedImage.content[0].g ^ random.byteRepr[1];
+    finalImage.content[0].b = key.byteRepr[0] ^ criptedImage.content[0].b ^ random.byteRepr[0];
+    int k;
+    for(k = 1; k < pixelSize; k++)
     {
-        curentPerm.x = perm.randSequence[k];
-        random.x = rand.randSequence[criptedImage.height * criptedImage.width + k];
-        criptedImage.content[k].r = criptedImage.content[k - 1].r ^ curentPerm.byteRepr[2] ^ random.byteRepr[2];
-        criptedImage.content[k].g = criptedImage.content[k - 1].g ^ curentPerm.byteRepr[1] ^ random.byteRepr[1];
-        criptedImage.content[k].b = criptedImage.content[k - 1].b ^ curentPerm.byteRepr[0] ^ random.byteRepr[0];
+        random.x = randomSequence[pixelSize + k];
+        finalImage.content[k].r = criptedImage.content[k].r ^ criptedImage.content[k - 1].r ^ random.byteRepr[2];
+        finalImage.content[k].g = criptedImage.content[k].g ^ criptedImage.content[k - 1].g ^ random.byteRepr[1];
+        finalImage.content[k].b = criptedImage.content[k].b ^ criptedImage.content[k - 1].b ^ random.byteRepr[0];
     }
-
-    createBMP(fileDestination, criptedImage);
-
+    struct image decriptedImage = criptedImage;
+    decriptedImage.content = malloc(pixelSize * sizeof(struct pixel));
+    for(i = 0; i < pixelSize; i++)
+        decriptedImage.content[inversPerm[i]] = finalImage.content[i];
+    createBMP(fileSource, decriptedImage);
+    free(finalImage.content);
+    free(inversPerm);
+    free(permutation);
+    free(criptedImage.content);
+    free(decriptedImage.content);
 }
 
-
+void chiSquaredValues(char* filePath) {
+    struct image image = loadBMP(filePath);
+    int pixelSize = image.width * image.height;
+    float fValue = (image.width * image.height) / 256.0;
+    printf("%f\n", fValue);
+    float *frecvRed, *frecvGreen, *frecvBlue;
+    frecvRed = malloc(256 * sizeof(float));
+    frecvBlue = malloc(256 * sizeof(float));
+    frecvGreen = malloc(256 * sizeof(float));
+    int i, j;
+    for (i = 0; i < pixelSize; i++) {
+        frecvRed[image.content[i].r]++;
+        frecvGreen[image.content[i].g]++;
+        frecvBlue[image.content[i].b]++;
+    }
+    float chiRed = 0, chiGreen = 0, chiBlue = 0;
+    for (i = 0; i < 256; i++) {
+        chiRed += ((frecvRed[i] - fValue) * (frecvRed[i] - fValue)) / fValue;
+        chiGreen += ((frecvGreen[i] - fValue) * (frecvGreen[i] - fValue)) / fValue;
+        chiBlue += ((frecvBlue[i] - fValue) * (frecvBlue[i] - fValue)) / fValue;
+    }
+    printf("chi-squared-red = %.2f \n chi-squared-green = %.2f \n chi-squared-blue = %.2f", chiRed, chiGreen, chiBlue);
+}
 int main()
 {
-    //struct image image = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp");
-    //createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\testpeppers.bmp", image);
-    //struct random rand = xorShift(1000, 1000);
-    cripBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp",
+    struct image image = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp");
+
+    criptBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp",
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\cript.bmp",
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");
+
+     decriptBMP("E:\\INFO\\FMI\\ProgProc""d\\ProiectLab\\DecriptPeppers.bmp",
+            "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\cript.bmp",
+            "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");
+    chiSquaredValues("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\enc_peppers_ok.bmp");
     return 0;
 }
