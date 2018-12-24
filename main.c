@@ -230,6 +230,12 @@ void chiSquaredValues(char* filePath) {
     frecvBlue = malloc(256 * sizeof(float));
     frecvGreen = malloc(256 * sizeof(float));
     int i, j;
+    for(i = 0; i < 256; i++)
+    {
+        frecvBlue[i] = 0;
+        frecvGreen[i] = 0;
+        frecvRed[i] = 0;
+    }
     for (i = 0; i < pixelSize; i++) {
         frecvRed[image.content[i].r]++;
         frecvGreen[image.content[i].g]++;
@@ -252,9 +258,10 @@ int main()
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\cript.bmp",
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");
 
-     decriptBMP("E:\\INFO\\FMI\\ProgProc""d\\ProiectLab\\DecriptPeppers.bmp",
+     decriptBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\DecriptPeppers.bmp",
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\cript.bmp",
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");
+    //printf("Am deschis \n");
     chiSquaredValues("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\enc_peppers_ok.bmp");
     return 0;
 }
