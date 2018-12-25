@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 // definim o structura de date care permite memorarea unui pixel
 
 struct pixel
@@ -19,6 +20,12 @@ struct image
     struct pixel *content;
     unsigned int width, height, padding, contentSize;
 };
+
+struct pairPoint
+{
+    int x, y;
+};
+
 
 void swap (int *a, int *b)
 {
@@ -68,7 +75,7 @@ struct image loadBMP(char *fileName)
     if(image.width % 4 == 0)
         image.padding = 0;
     else
-        image.padding = 4 - (image.width % 4);
+        image.padding = 4 - (3 * image.width) % 4;
 
     fseek(filePointer, 54, SEEK_SET);
     image.content = malloc(image.width * image.height * sizeof(struct pixel));
@@ -252,16 +259,112 @@ void chiSquaredValues(char* filePath) {
     free(frecvGreen);
     printf("chi-squared-red = %.2f \n chi-squared-green = %.2f \n chi-squared-blue = %.2f", chiRed, chiGreen, chiBlue);
 }
+
+float corr(int x, int y, float SPrime, float deviationS, struct image sablon, struct image image)
+{
+    int i, j;
+    if((x + sablon.width > image.width) || (y + sablon.height > image.height))
+        return -1;
+    float fIPrime = 0, corelation = 0;
+    int curent = x * image.width + y;
+    for(i = x; i < x + sablon.height; i++)
+        for(j = y; j < y + sablon.width; j++) {
+            fIPrime += image.content[curent].r;
+            curent++;
+        }
+    fIPrime = fIPrime / (sablon.height * sablon.width);
+    curent = x * image.width + y;
+    float deviationFI = 0;
+    for(i = x; i < x + sablon.height; i++)
+        for(j = y; j < y + sablon.width; j++) {
+            deviationFI += image.content[curent].r - fIPrime;
+            curent++;
+        }
+    curent = x * image.width + y;
+    deviationFI = sqrtf(deviationFI / (sablon.height * sablon.width - 1));
+    //printf("\n %.2f", deviationFI);
+    for(i = x; i < x + sablon.height; i++)
+        for(j = y; j < y + sablon.width; j++)
+        {
+            corelation += ((image.content[curent].r - fIPrime) * (sablon.content[(i - x) * sablon.width + (j - y)].r - SPrime))
+                        /  (deviationFI * deviationS);
+        }
+    corelation = corelation / (sablon.width * sablon.height);
+    //printf("%.2f\n  ", corelation);
+    return corelation;
+}
+
+struct pairPoint* templateMatching(struct image image, struct image sablon, float ps)
+{
+    int i, j, curent = 0;
+    float SPrime = 0;
+    // (*) Calculam S barat
+    for(i = 0; i < sablon.height; i++)
+        for(j = 0; j < sablon.width; j++)
+        {
+            SPrime += sablon.content[curent].r;
+            curent++;
+        }
+    int pixelDimSablon = sablon.width * sablon.height;
+    SPrime = SPrime / pixelDimSablon;
+    // (*)
+
+    // (**) Calculam deviatia standard din sablonul S
+    double deviationS = 0;
+    curent = 0;
+    for(i = 0; i < sablon.height; i++)
+        for(j = 0; j < sablon.width; j++)
+        {
+            deviationS += sablon.content[curent].r - SPrime;
+            curent++;
+        }
+    deviationS = deviationS / (pixelDimSablon - 1);
+    deviationS = sqrtf(deviationS);
+    printf("%.2f\n", deviationS);
+    // (**)
+    curent = 0;
+    struct pairPoint *result = malloc(sizeof(struct pairPoint));
+    struct pairPoint *aux;
+    int x, y, size = 1;
+    float curentCorelation;
+    printf("%.2f %.2f", SPrime, deviationS);
+    for(x = 0; x < image.height; x++)
+        for(y = 0; y < image.width; y++) {
+            curentCorelation = corr(x, y, SPrime, deviationS, sablon, image);
+            //printf("%.2f\n", curentCorelation);
+            if (curentCorelation > ps)
+            {
+                aux = realloc(result, sizeof(struct pairPoint) * size);\
+                if(aux == NULL)
+                    printf("MEMORIE INSUFICIENTA");
+                else
+                    result = aux;
+                result[size - 1].x = x;
+                result[size - 1].y = y;
+                size++;
+            }
+        }
+    printf("\n%d", size);
+    return result;
+}
+
+
 int main()
 {
-    criptBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp",
+   /* criptBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp",
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\cript.bmp",
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");
 
      decriptBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\DecriptPeppers.bmp",
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\cript.bmp",
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");
-    //printf("Am deschis \n");
     chiSquaredValues("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\enc_peppers_ok.bmp");
+    */
+    struct image image = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test_grayscale.bmp");
+    struct image sablon = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\cifra0gray.bmp");
+
+
+    templateMatching(image, sablon, 0.5);
+
     return 0;
 }
