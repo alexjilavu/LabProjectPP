@@ -13,7 +13,12 @@
   <component name="ChangeListManager">
     <list default="true" id="af334be4-e5a7-4765-9dc2-f6d34da41d72" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change beforePath="$PROJECT_DIR$/Sabloane/cifra0gray.bmp" afterPath="$PROJECT_DIR$/Sabloane/cifra0gray.bmp" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ProiectLab.dir/main.c.obj" afterPath="" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ProiectLab.dir/objects.a" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ProiectLab.dir/objects.a" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/ProiectLab.exe" afterPath="$PROJECT_DIR$/cmake-build-debug/ProiectLab.exe" />
       <change beforePath="$PROJECT_DIR$/main.c" afterPath="$PROJECT_DIR$/main.c" />
+      <change beforePath="$PROJECT_DIR$/test_grayscale.bmp" afterPath="" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -29,8 +34,8 @@
       <file leaf-file-name="main.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="280">
-              <caret line="350" column="0" lean-forward="true" selection-start-line="350" selection-start-column="0" selection-end-line="350" selection-end-column="0" />
+            <state relative-caret-position="50">
+              <caret line="405" column="1" lean-forward="true" selection-start-line="405" selection-start-column="1" selection-end-line="405" selection-end-column="1" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -38,17 +43,13 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="test_grayscale.bmp" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test_grayscale.bmp">
-          <provider selected="true" editor-type-id="images">
-            <state />
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="cifra0gray.bmp" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Sabloane/cifra0gray.bmp">
-          <provider selected="true" editor-type-id="images">
-            <state />
+      <file leaf-file-name="grayscale.c" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/../proiectPP/cod/grayscale.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="500">
+              <caret line="56" column="46" lean-forward="false" selection-start-line="56" selection-start-column="46" selection-end-line="56" selection-end-column="46" />
+              <folding />
+            </state>
           </provider>
         </entry>
       </file>
@@ -58,9 +59,15 @@
     <findStrings>
       <find>criptedImage</find>
       <find>finalImage</find>
+      <find>startingPoz</find>
+      <find>image</find>
+      <find>(*image)</find>
     </findStrings>
     <replaceStrings>
       <replace>finalImage</replace>
+      <replace>curentPoz</replace>
+      <replace>(*image)</replace>
+      <replace>image</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -80,7 +87,8 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="227" />
+    <option name="x" value="134" />
+    <option name="y" value="160" />
     <option name="width" value="1400" />
     <option name="height" value="1038" />
   </component>
@@ -176,18 +184,20 @@
       <workItem from="1544360732864" duration="245000" />
       <workItem from="1544509674135" duration="50000" />
       <workItem from="1545686201420" duration="842000" />
-      <workItem from="1545746503067" duration="12954000" />
+      <workItem from="1545746503067" duration="16455000" />
+      <workItem from="1545781402540" duration="597000" />
+      <workItem from="1545915872209" duration="14384000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="68784000" />
+    <option name="totallyTimeSpent" value="87266000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-9" y="-9" width="1938" height="1048" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1796875" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.12916666" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32928178" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
@@ -215,11 +225,51 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="4" />
+      <option name="time" value="5" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/main.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_grayscale.bmp">
+      <provider selected="true" editor-type-id="images">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Sabloane/cifra0gray.bmp">
+      <provider selected="true" editor-type-id="images">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9275">
+          <caret line="371" column="36" lean-forward="true" selection-start-line="371" selection-start-column="36" selection-end-line="371" selection-end-column="36" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test_grayscale.bmp">
+      <provider selected="true" editor-type-id="images">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Sabloane/cifra0gray.bmp">
+      <provider selected="true" editor-type-id="images">
+        <state />
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/main.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -465,10 +515,18 @@
         <state />
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../proiectPP/cod/grayscale.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="500">
+          <caret line="56" column="46" lean-forward="false" selection-start-line="56" selection-start-column="46" selection-end-line="56" selection-end-column="46" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/main.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="280">
-          <caret line="350" column="0" lean-forward="true" selection-start-line="350" selection-start-column="0" selection-end-line="350" selection-end-column="0" />
+        <state relative-caret-position="50">
+          <caret line="405" column="1" lean-forward="true" selection-start-line="405" selection-start-column="1" selection-end-line="405" selection-end-column="1" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>

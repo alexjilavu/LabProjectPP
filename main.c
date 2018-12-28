@@ -26,6 +26,12 @@ struct pairPoint
     int x, y;
 };
 
+struct arrayPairPoint
+{
+    struct pairPoint* arr;
+    int size;
+};
+
 
 void swap (int *a, int *b)
 {
@@ -107,6 +113,7 @@ void createBMP(char *fileName, struct image image)
     for(i = 0; i < 54; i++)
         fwrite(&image.header[i], sizeof(unsigned char), 1, filePointer);
     int curentPosition = 0;
+    unsigned char pad = 0;
     for(i = 0; i < image.height; i++){
         for(j = 0; j < image.width; j++){
             fwrite(&image.content[curentPosition].b, sizeof(unsigned char), 1, filePointer);
@@ -114,7 +121,7 @@ void createBMP(char *fileName, struct image image)
             fwrite(&image.content[curentPosition].r, sizeof(unsigned char), 1, filePointer);
             curentPosition++;
         }
-        fwrite(0, sizeof(unsigned char), image.padding, filePointer);
+        fwrite(&pad, sizeof(unsigned char), image.padding, filePointer);
     }
     fclose(filePointer);
 }
@@ -263,38 +270,48 @@ void chiSquaredValues(char* filePath) {
 float corr(int x, int y, float SPrime, float deviationS, struct image sablon, struct image image)
 {
     int i, j;
-    if((x + sablon.width > image.width) || (y + sablon.height > image.height))
+    if((x + sablon.height > image.height) || (y + sablon.width > image.width))
         return -1;
     float fIPrime = 0, corelation = 0;
-    int curent = x * image.width + y;
     for(i = x; i < x + sablon.height; i++)
         for(j = y; j < y + sablon.width; j++) {
-            fIPrime += image.content[curent].r;
-            curent++;
+            fIPrime += image.content[i * image.width + j].r;
         }
     fIPrime = fIPrime / (sablon.height * sablon.width);
-    curent = x * image.width + y;
     float deviationFI = 0;
     for(i = x; i < x + sablon.height; i++)
         for(j = y; j < y + sablon.width; j++) {
-            deviationFI += image.content[curent].r - fIPrime;
-            curent++;
+            deviationFI += (image.content[i * image.width + j].r - fIPrime) * (image.content[i * image.width + j].r - fIPrime);
         }
-    curent = x * image.width + y;
     deviationFI = sqrtf(deviationFI / (sablon.height * sablon.width - 1));
-    //printf("\n %.2f", deviationFI);
-    for(i = x; i < x + sablon.height; i++)
-        for(j = y; j < y + sablon.width; j++)
+    int curentSablon = 0, curentImagePoz = 0, curentSablonPoz = 0;
+    for(i = 0; i < sablon.height; i++)
+        for(j = 0; j < sablon.width; j++)
         {
-            corelation += ((image.content[curent].r - fIPrime) * (sablon.content[(i - x) * sablon.width + (j - y)].r - SPrime))
-                        /  (deviationFI * deviationS);
+            curentImagePoz = (x + i) * image.width + y + j;
+            curentSablonPoz = i * sablon.width + j;
+            corelation += ((image.content[curentImagePoz].r - fIPrime) * (sablon.content[curentSablonPoz].r - SPrime))
+                          / (deviationFI * deviationS);
         }
-    corelation = corelation / (sablon.width * sablon.height);
-    //printf("%.2f\n  ", corelation);
+    float n = sablon.width * sablon.height;
+    corelation = corelation / n;
     return corelation;
 }
+struct image grayscale(char* fileSource, char* fileDestination)
+{
+    struct image image = loadBMP(fileSource);
+    int i;
+    unsigned char aux;
+    for(i = 0; i < image.width * image.height; i++)
+    {
+        aux = 0.299 * image.content[i].r + 0.587 * image.content[i].g + 0.114 * image.content[i].b;
+        image.content[i].r = image.content[i].g = image.content[i].b = aux;
+    }
+    createBMP(fileDestination, image);
+    return image;
+}
 
-struct pairPoint* templateMatching(struct image image, struct image sablon, float ps)
+struct arrayPairPoint templateMatching(struct image image, struct image sablon, float ps)
 {
     int i, j, curent = 0;
     float SPrime = 0;
@@ -315,39 +332,75 @@ struct pairPoint* templateMatching(struct image image, struct image sablon, floa
     for(i = 0; i < sablon.height; i++)
         for(j = 0; j < sablon.width; j++)
         {
-            deviationS += sablon.content[curent].r - SPrime;
+            deviationS += (sablon.content[curent].r - SPrime) * (sablon.content[curent].r - SPrime);
             curent++;
         }
     deviationS = deviationS / (pixelDimSablon - 1);
     deviationS = sqrtf(deviationS);
-    printf("%.2f\n", deviationS);
     // (**)
     curent = 0;
-    struct pairPoint *result = malloc(sizeof(struct pairPoint));
+    struct arrayPairPoint result;
+    result.arr = malloc(sizeof(struct pairPoint));
     struct pairPoint *aux;
-    int x, y, size = 1;
+    int x, y, size = 1, nr = 0;
     float curentCorelation;
-    printf("%.2f %.2f", SPrime, deviationS);
     for(x = 0; x < image.height; x++)
         for(y = 0; y < image.width; y++) {
             curentCorelation = corr(x, y, SPrime, deviationS, sablon, image);
-            //printf("%.2f\n", curentCorelation);
             if (curentCorelation > ps)
             {
-                aux = realloc(result, sizeof(struct pairPoint) * size);\
+                aux = realloc(result.arr, sizeof(struct pairPoint) * size);
                 if(aux == NULL)
                     printf("MEMORIE INSUFICIENTA");
                 else
-                    result = aux;
-                result[size - 1].x = x;
-                result[size - 1].y = y;
+                    result.arr = aux;
+                result.arr[size - 1].x = x;
+                result.arr[size - 1].y = y;
                 size++;
             }
         }
+    result.size = size;
     printf("\n%d", size);
     return result;
 }
+struct image drawBorder(struct image image, struct pairPoint f, struct pixel color, struct image sablon)
+{
+    if(f.x > image.height || f.x > image.width || f.x < 0 || f.y < 0)
+        return image;
+    if((f.x + sablon.height > image.height) || (f.y + sablon.width) > image.width)
+        return image;
+    int i, j;
+    int curentPoz = f.x * image.width + f.y;
+    // Ne deplasam spre dreapta
 
+    for(i = 0; i < sablon.width; i++) {
+        image.content[curentPoz] = color;
+        curentPoz++;
+    }
+    // Ne deplasam in sus
+
+    for(j = 0; j < sablon.height; j++)
+    {
+        image.content[curentPoz] = color;
+        curentPoz += image.width;
+    }
+    // Ne deplasam in stanga
+
+    for(i = 0; i < sablon.width; i++)
+    {
+        image.content[curentPoz] = color;
+        curentPoz--;
+    }
+
+    // Ne deplasam in jos
+
+    for(j = 0; j < sablon.height; j++)
+    {
+        image.content[curentPoz] = color;
+        curentPoz -= image.width;
+    }
+    return image;
+}
 
 int main()
 {
@@ -360,11 +413,21 @@ int main()
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");
     chiSquaredValues("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\enc_peppers_ok.bmp");
     */
-    struct image image = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test_grayscale.bmp");
-    struct image sablon = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\cifra0gray.bmp");
+    struct image sablon = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\cifra7.bmp",
+                                    "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\cifra7gray.bmp");
+    struct image image = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test.bmp",
+                                   "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test_gray.bmp");
 
+    struct arrayPairPoint result = templateMatching(image, sablon, 0.7);
+    struct pixel color; color.r = 250; color.b = 200; color.g = 0;
+    int i;
+    struct pairPoint f;
+    f.x = 387;
+    f.y = 184;
+    //image = drawBorder(image, f, color, sablon);
+    for(i = 0; i < result.size; i++){
+        image = drawBorder(image, result.arr[i], color, sablon);}
+    createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\test7.bmp", image);
 
-    templateMatching(image, sablon, 0.5);
-
-    return 0;
+     return 0;
 }
