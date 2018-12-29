@@ -463,10 +463,10 @@ struct arrayPairPoint getCorelations(struct image grayscaleImage,struct image or
         fscanf(fin, "%s", &fileName);
         sablon = grayscale(fileName);
         curentArr = templateMatching(grayscaleImage, sablon, 0.5);
-        color = chooseColor(i);
+        /*color = chooseColor(i);
         for(index = 0; index < curentArr.size; index++){
             originalImage = drawBorder(originalImage, curentArr.arr[index], color, sablon);
-            }
+            }*/
         aux = realloc(corelationTable.arr, sizeof(struct pairPoint) * (curentArr.size + corelationTable.size));
         if (aux == NULL) {
             printf("MEMORIE INSUFICIENTA");
@@ -496,6 +496,80 @@ int cmp(const void *a, const void *b)
         return -1;
 }
 
+int min(int a, int b)
+{
+    if(a > b)
+        return b;
+    return a;
+}
+
+int max(int a, int b)
+{
+    if(a < b)
+        return b;
+    return a;
+}
+
+void deleteElement(struct pairPoint** array, int* size, int j)
+{
+    int i;
+    for(i = j; i < (*size) - 1; i++)
+        (*array)[i] = (*array)[i + 1];
+    (*size)--;
+}
+int overlap(struct pairPoint p1, struct pairPoint p2, struct image sablon)
+{
+    struct pairPoint l1, r1, l2, r2;
+    l1.x = p1.x; l1.y = p1.y + sablon.height;
+    r1.y = p1.y; r1.x = p1.x + sablon.width;
+    l2.x = p2.x; l2.y = p2.y + sablon.height;
+    r2.y = p2.y; r2.x = p2.x + sablon.width;
+
+    if(l1.x > r2.x || l2.x > r1.x)
+        return 0;
+    if(l1.y < r2.y || l2.y < r1.y)
+        return 0;
+    return 1;
+}
+int overlapingArea(struct pairPoint p1, struct pairPoint p2, struct image sablon)
+{
+    // (*) Folosim colturile din stanga jos si dreapta sus pentru a calcula aria suprapusa
+    // l1 = coltul stanga jos al dreptunghiului 1
+    // r1 = coltul dreapta sus al dreptunghiului 1
+
+    struct pairPoint l1, r1, l2, r2;
+    l1 = p1;
+    r1.x = p1.x + sablon.width; r1.y = p1.y + sablon.height;
+    l2 = p2;
+    r2.x = p2.x + sablon.width; r2.y = p2.y + sablon.height;
+    return (min(r1.x, r2.x) - max(l1.x, l2.x)) * (min(r1.y, r2.y) - max(l1.y, l2.y));
+}
+
+
+
+struct arrayPairPoint nonMaxElimination(struct arrayPairPoint corelationTable, struct image sablon)
+{
+    int i, j, nr = 0;
+    float areaOfTwoRectangles = 2 * sablon.width * sablon.height;
+    for(i = 0; i < corelationTable.size - 1; i++)
+        for(j = i + 1; j < corelationTable.size; j++)
+        {
+            if(corelationTable.arr[i].corelation > corelationTable.arr[j].corelation &&
+                    overlap(corelationTable.arr[i], corelationTable.arr[j], sablon))
+            {
+                float overlapArea = overlapingArea(corelationTable.arr[i], corelationTable.arr[j], sablon);
+                float suprapunere = overlapArea / (areaOfTwoRectangles - overlapArea);
+                if(suprapunere > 0.2) {
+                    deleteElement(&corelationTable.arr, &corelationTable.size, j);
+                    nr++;
+                }
+                //printf("%.2f\n", suprapunere);
+            }
+        }
+    printf("%d", nr);
+    return corelationTable;
+}
+
 int main()
 {
    /* criptBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp",
@@ -507,7 +581,7 @@ int main()
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");
     chiSquaredValues("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\enc_peppers_ok.bmp");
     */
-    //struct image sablon = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\cifra7.bmp");
+    struct image sablon = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\cifra7.bmp");
     struct image grayscaleImage = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test.bmp");
     struct image originalImage = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test.bmp");
 
@@ -522,15 +596,16 @@ int main()
         originalImage = drawBorder(originalImage, result.arr[i], color, sablon);}
     createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\test7.bmp", originalImage);
 */
+
     struct arrayPairPoint corelationTable = getCorelations(grayscaleImage, originalImage,
                                                            "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\sabloane.txt");
 
     int i;
     qsort(corelationTable.arr, corelationTable.size, sizeof(struct pairPoint), cmp);
+    corelationTable = nonMaxElimination(corelationTable, sablon);
+    struct pixel color; color.r = 250; color.b = 200; color.g = 0;
     for(i = 0; i < corelationTable.size; i++)
-        printf("%.2f\n", corelationTable.arr[i].corelation);
-
-    printf("%d", corelationTable.size);
-
+        originalImage = drawBorder(originalImage, corelationTable.arr[i], color, sablon);
+    createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\imagineFinala.bmp", originalImage);
      return 0;
 }
