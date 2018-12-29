@@ -25,6 +25,7 @@ struct pairPoint
 {
     int x, y;
     float corelation;
+    int nrSablon;
 };
 
 struct arrayPairPoint
@@ -439,7 +440,7 @@ struct pixel chooseColor(int i)
     return color;
 }
 
-struct arrayPairPoint getCorelations(struct image grayscaleImage,struct image originalImage, const char *sabloane)
+struct arrayPairPoint getCorelations(struct image grayscaleImage, const char *sabloane)
 {
     FILE* fin = fopen(sabloane, "r");
     struct arrayPairPoint nul;
@@ -463,10 +464,6 @@ struct arrayPairPoint getCorelations(struct image grayscaleImage,struct image or
         fscanf(fin, "%s", &fileName);
         sablon = grayscale(fileName);
         curentArr = templateMatching(grayscaleImage, sablon, 0.5);
-        /*color = chooseColor(i);
-        for(index = 0; index < curentArr.size; index++){
-            originalImage = drawBorder(originalImage, curentArr.arr[index], color, sablon);
-            }*/
         aux = realloc(corelationTable.arr, sizeof(struct pairPoint) * (curentArr.size + corelationTable.size));
         if (aux == NULL) {
             printf("MEMORIE INSUFICIENTA");
@@ -479,10 +476,10 @@ struct arrayPairPoint getCorelations(struct image grayscaleImage,struct image or
         for(j = previousSize; j < corelationTable.size; j++)
         {
             corelationTable.arr[j] = curentArr.arr[j - previousSize];
+            corelationTable.arr[j].nrSablon = i;
             index++;
         }
     }
-    createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\testTOT.bmp", originalImage);
     return corelationTable;
 }
 
@@ -544,9 +541,6 @@ int overlapingArea(struct pairPoint p1, struct pairPoint p2, struct image sablon
     r2.x = p2.x + sablon.width; r2.y = p2.y + sablon.height;
     return (min(r1.x, r2.x) - max(l1.x, l2.x)) * (min(r1.y, r2.y) - max(l1.y, l2.y));
 }
-
-
-
 struct arrayPairPoint nonMaxElimination(struct arrayPairPoint corelationTable, struct image sablon)
 {
     int i, j, nr = 0;
@@ -561,13 +555,25 @@ struct arrayPairPoint nonMaxElimination(struct arrayPairPoint corelationTable, s
                 float suprapunere = overlapArea / (areaOfTwoRectangles - overlapArea);
                 if(suprapunere > 0.2) {
                     deleteElement(&corelationTable.arr, &corelationTable.size, j);
-                    nr++;
                 }
                 //printf("%.2f\n", suprapunere);
             }
         }
-    printf("%d", nr);
     return corelationTable;
+}
+
+void drawFinalImage(struct image originalImage, struct image sablon, struct arrayPairPoint corelationTable)
+{
+    int i, j;
+    char fileName[100];
+    struct pixel color;
+    for(i = 0; i < corelationTable.size; i++)
+    {
+        color = chooseColor(corelationTable.arr[i].nrSablon);
+        originalImage = drawBorder(originalImage, corelationTable.arr[i], color, sablon);
+    }
+    createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\imagineFinala.bmp", originalImage);
+
 }
 
 int main()
@@ -597,15 +603,17 @@ int main()
     createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\test7.bmp", originalImage);
 */
 
-    struct arrayPairPoint corelationTable = getCorelations(grayscaleImage, originalImage,
-                                                           "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\sabloane.txt");
+    struct arrayPairPoint corelationTable = getCorelations(grayscaleImage, "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\sabloane.txt");
 
     int i;
     qsort(corelationTable.arr, corelationTable.size, sizeof(struct pairPoint), cmp);
     corelationTable = nonMaxElimination(corelationTable, sablon);
-    struct pixel color; color.r = 250; color.b = 200; color.g = 0;
+    printf("%d\n", corelationTable.size);
+    /*struct pixel color; color.r = 250; color.b = 200; color.g = 0;
     for(i = 0; i < corelationTable.size; i++)
         originalImage = drawBorder(originalImage, corelationTable.arr[i], color, sablon);
     createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\imagineFinala.bmp", originalImage);
+     */
+    drawFinalImage(originalImage, sablon, corelationTable);
      return 0;
 }
