@@ -1,0 +1,11 @@
+10
+E:\INFO\FMI\ProgProced\ProiectLab\Sabloane\cifra0.bmp
+E:\INFO\FMI\ProgProced\ProiectLab\Sabloane\cifra1.bmp
+E:\INFO\FMI\ProgProced\ProiectLab\Sabloane\cifra2.bmp
+E:\INFO\FMI\ProgProced\ProiectLab\Sabloane\cifra3.bmp
+E:\INFO\FMI\ProgProced\ProiectLab\Sabloane\cifra4.bmp
+E:\INFO\FMI\ProgProced\ProiectLab\Sabloane\cifra5.bmp
+E:\INFO\FMI\ProgProced\ProiectLab\Sabloane\cifra6.bmp
+E:\INFO\FMI\ProgProced\ProiectLab\Sabloane\cifra7.bmp
+E:\INFO\FMI\ProgProced\ProiectLab\Sabloane\cifra8.bmp
+E:\INFO\FMI\ProgProced\ProiectLab\Sabloane\cifra9.bmp

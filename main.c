@@ -24,6 +24,7 @@ struct image
 struct pairPoint
 {
     int x, y;
+    float corelation;
 };
 
 struct arrayPairPoint
@@ -73,7 +74,6 @@ struct image loadBMP(char *fileName)
     image.header = malloc(54 * sizeof(unsigned char));
     for(i = 0; i < 54; i++)
         fread(&image.header[i], sizeof(unsigned char), 1, filePointer);
-
     fseek(filePointer, 18, SEEK_SET);
 
     fread(&image.width, sizeof(unsigned int), 1, filePointer);
@@ -82,10 +82,9 @@ struct image loadBMP(char *fileName)
         image.padding = 0;
     else
         image.padding = 4 - (3 * image.width) % 4;
-
+    fflush(filePointer);
     fseek(filePointer, 54, SEEK_SET);
     image.content = malloc(image.width * image.height * sizeof(struct pixel));
-
     image.contentSize = 0;
     for(i = 0; i < image.height; i++) {
         for (j = 0; j < image.width; j++) {
@@ -96,6 +95,7 @@ struct image loadBMP(char *fileName)
         }
         fseek(filePointer, image.padding, SEEK_CUR);
     }
+    fflush(filePointer);
     fclose(filePointer);
     return image;
 
@@ -147,7 +147,6 @@ void criptBMP(char *fileSource, char *fileDestination, char *fileKey)
     int i, j;
     for(i = 0; i < pixelSize; i++)
         permutation[i] = i;
-    unsigned int aux;
     for(i = pixelSize - 1; i > 0; i--)
     {
         j = randomSequence[i] % (i + 1);
@@ -243,7 +242,7 @@ void chiSquaredValues(char* filePath) {
     frecvRed = malloc(256 * sizeof(float));
     frecvBlue = malloc(256 * sizeof(float));
     frecvGreen = malloc(256 * sizeof(float));
-    int i, j;
+    int i;
     for(i = 0; i < 256; i++)
     {
         frecvBlue[i] = 0;
@@ -284,7 +283,7 @@ float corr(int x, int y, float SPrime, float deviationS, struct image sablon, st
             deviationFI += (image.content[i * image.width + j].r - fIPrime) * (image.content[i * image.width + j].r - fIPrime);
         }
     deviationFI = sqrtf(deviationFI / (sablon.height * sablon.width - 1));
-    int curentSablon = 0, curentImagePoz = 0, curentSablonPoz = 0;
+    int curentImagePoz = 0, curentSablonPoz = 0;
     for(i = 0; i < sablon.height; i++)
         for(j = 0; j < sablon.width; j++)
         {
@@ -297,17 +296,15 @@ float corr(int x, int y, float SPrime, float deviationS, struct image sablon, st
     corelation = corelation / n;
     return corelation;
 }
-struct image grayscale(char* fileSource, char* fileDestination)
+struct image grayscale(char* fileSource)
 {
     struct image image = loadBMP(fileSource);
     int i;
     unsigned char aux;
-    for(i = 0; i < image.width * image.height; i++)
-    {
+    for(i = 0; i < image.width * image.height; i++) {
         aux = 0.299 * image.content[i].r + 0.587 * image.content[i].g + 0.114 * image.content[i].b;
         image.content[i].r = image.content[i].g = image.content[i].b = aux;
     }
-    createBMP(fileDestination, image);
     return image;
 }
 
@@ -342,7 +339,7 @@ struct arrayPairPoint templateMatching(struct image image, struct image sablon, 
     struct arrayPairPoint result;
     result.arr = malloc(sizeof(struct pairPoint));
     struct pairPoint *aux;
-    int x, y, size = 1, nr = 0;
+    int x, y, size = 1;
     float curentCorelation;
     for(x = 0; x < image.height; x++)
         for(y = 0; y < image.width; y++) {
@@ -356,11 +353,11 @@ struct arrayPairPoint templateMatching(struct image image, struct image sablon, 
                     result.arr = aux;
                 result.arr[size - 1].x = x;
                 result.arr[size - 1].y = y;
+                result.arr[size - 1].corelation = curentCorelation;
                 size++;
             }
         }
     result.size = size;
-    printf("\n%d", size);
     return result;
 }
 struct image drawBorder(struct image image, struct pairPoint f, struct pixel color, struct image sablon)
@@ -401,6 +398,103 @@ struct image drawBorder(struct image image, struct pairPoint f, struct pixel col
     }
     return image;
 }
+struct pixel chooseColor(int i)
+{
+    struct pixel color;
+    color.b = color.r = color.g = 0;
+    switch (i)
+    {
+        case 0:
+            color.r = 255;
+            break;
+        case 1:
+            color.r = color.g = 255;
+            break;
+        case 2:
+            color.g = 255;
+            break;
+        case 3:
+            color.g = color.b = 255;
+            break;
+        case 4:
+            color.r = color.b = 255;
+            break;
+        case 5:
+            color.b = 255;
+            break;
+        case 6:
+            color.r = color.b = color.g = 192;
+            break;
+        case 7:
+            color.r = 255;
+            color.g = 140;
+            break;
+        case 8:
+            color.r = color.b = 128;
+            break;
+        case 9:
+            color.r = 128;
+            break;
+    }
+    return color;
+}
+
+struct arrayPairPoint getCorelations(struct image grayscaleImage,struct image originalImage, const char *sabloane)
+{
+    FILE* fin = fopen(sabloane, "r");
+    struct arrayPairPoint nul;
+    if(fin == NULL)
+    {
+        printf("Fisierul cu sabloane nu a putut fi deschis\n");
+        return nul;
+    }
+    int numarSabloane, i, j;
+    char fileName[100];
+    struct image sablon;
+    struct pixel color;
+    struct arrayPairPoint curentArr, corelationTable;
+    corelationTable.size = 0;
+    corelationTable.arr = malloc(sizeof(struct pairPoint));
+    int previousSize = 0, index = 0;
+    struct pairPoint *aux;
+    fscanf(fin, "%d", &numarSabloane);
+    for(i = 0; i < numarSabloane; i++)
+    {
+        fscanf(fin, "%s", &fileName);
+        sablon = grayscale(fileName);
+        curentArr = templateMatching(grayscaleImage, sablon, 0.5);
+        color = chooseColor(i);
+        for(index = 0; index < curentArr.size; index++){
+            originalImage = drawBorder(originalImage, curentArr.arr[index], color, sablon);
+            }
+        aux = realloc(corelationTable.arr, sizeof(struct pairPoint) * (curentArr.size + corelationTable.size));
+        if (aux == NULL) {
+            printf("MEMORIE INSUFICIENTA");
+            return nul;
+        }
+        previousSize = corelationTable.size;
+        corelationTable.arr = aux;
+        corelationTable.size = previousSize + curentArr.size;
+        index = 0;
+        for(j = previousSize; j < corelationTable.size; j++)
+        {
+            corelationTable.arr[j] = curentArr.arr[j - previousSize];
+            index++;
+        }
+    }
+    createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\testTOT.bmp", originalImage);
+    return corelationTable;
+}
+
+int cmp(const void *a, const void *b)
+{
+    struct pairPoint *pairA = (struct pairPoint *) a;
+    struct pairPoint *pairB = (struct pairPoint *) b;
+    if(pairA->corelation < pairB->corelation)
+        return 1;
+    if(pairA->corelation > pairB->corelation)
+        return -1;
+}
 
 int main()
 {
@@ -413,12 +507,11 @@ int main()
             "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");
     chiSquaredValues("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\enc_peppers_ok.bmp");
     */
-    struct image sablon = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\cifra7.bmp",
-                                    "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\cifra7gray.bmp");
-    struct image image = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test.bmp",
-                                   "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test_gray.bmp");
+    //struct image sablon = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\cifra7.bmp");
+    struct image grayscaleImage = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test.bmp");
+    struct image originalImage = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test.bmp");
 
-    struct arrayPairPoint result = templateMatching(image, sablon, 0.7);
+   /* struct arrayPairPoint result = templateMatching(grayscaleImage, sablon, 0.7);
     struct pixel color; color.r = 250; color.b = 200; color.g = 0;
     int i;
     struct pairPoint f;
@@ -426,8 +519,18 @@ int main()
     f.y = 184;
     //image = drawBorder(image, f, color, sablon);
     for(i = 0; i < result.size; i++){
-        image = drawBorder(image, result.arr[i], color, sablon);}
-    createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\test7.bmp", image);
+        originalImage = drawBorder(originalImage, result.arr[i], color, sablon);}
+    createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\test7.bmp", originalImage);
+*/
+    struct arrayPairPoint corelationTable = getCorelations(grayscaleImage, originalImage,
+                                                           "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\sabloane.txt");
+
+    int i;
+    qsort(corelationTable.arr, corelationTable.size, sizeof(struct pairPoint), cmp);
+    for(i = 0; i < corelationTable.size; i++)
+        printf("%.2f\n", corelationTable.arr[i].corelation);
+
+    printf("%d", corelationTable.size);
 
      return 0;
 }
