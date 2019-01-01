@@ -66,7 +66,7 @@ struct image loadBMP(char *fileName)
     struct image nul;
     nul.width = nul.height = 0;
     if(filePointer == NULL) {
-        printf("There was an error while opening the file");
+        printf("There was an error while opening the file %s\n", fileName);
         fclose(filePointer);
         return nul;
     }
@@ -264,7 +264,7 @@ void chiSquaredValues(char* filePath) {
     free(frecvBlue);
     free(frecvRed);
     free(frecvGreen);
-    printf("chi-squared-red = %.2f \n chi-squared-green = %.2f \n chi-squared-blue = %.2f", chiRed, chiGreen, chiBlue);
+    printf("chi-squared-red = %.2f \n chi-squared-green = %.2f \n chi-squared-blue = %.2f \n", chiRed, chiGreen, chiBlue);
 }
 
 float corr(int x, int y, float SPrime, float deviationS, struct image sablon, struct image image)
@@ -440,13 +440,13 @@ struct pixel chooseColor(int i)
     return color;
 }
 
-struct arrayPairPoint getCorelations(struct image grayscaleImage, const char *sabloane)
+struct arrayPairPoint getCorelations(struct image grayscaleImage, const char *sabloane, float corelationValue)
 {
     FILE* fin = fopen(sabloane, "r");
     struct arrayPairPoint nul;
     if(fin == NULL)
     {
-        printf("Fisierul cu sabloane nu a putut fi deschis\n");
+        printf("Fisierul ce contine caile sabloanelor pentru template matching nu a putut fi deschis\n");
         return nul;
     }
     int numarSabloane, i, j;
@@ -463,7 +463,7 @@ struct arrayPairPoint getCorelations(struct image grayscaleImage, const char *sa
     {
         fscanf(fin, "%s", &fileName);
         sablon = grayscale(fileName);
-        curentArr = templateMatching(grayscaleImage, sablon, 0.5);
+        curentArr = templateMatching(grayscaleImage, sablon, corelationValue);
         aux = realloc(corelationTable.arr, sizeof(struct pairPoint) * (curentArr.size + corelationTable.size));
         if (aux == NULL) {
             printf("MEMORIE INSUFICIENTA");
@@ -564,8 +564,7 @@ struct arrayPairPoint nonMaxElimination(struct arrayPairPoint corelationTable, s
 
 void drawFinalImage(struct image originalImage, struct image sablon, struct arrayPairPoint corelationTable)
 {
-    int i, j;
-    char fileName[100];
+    int i;
     struct pixel color;
     for(i = 0; i < corelationTable.size; i++)
     {
@@ -578,42 +577,79 @@ void drawFinalImage(struct image originalImage, struct image sablon, struct arra
 
 int main()
 {
-   /* criptBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\peppers.bmp",
-            "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\cript.bmp",
-            "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");
+    // (*) Criptarea unei imagini BMP; calea imaginii initiale, a celei criptate si cea a cheii secrete
+    // au fost citite din fisierul forCripting.txt
 
-     decriptBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\DecriptPeppers.bmp",
-            "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\cript.bmp",
-            "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\secret_key.txt");
-    chiSquaredValues("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\enc_peppers_ok.bmp");
-    */
+    FILE* fin = fopen("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\forCripting.txt", "r");
+    if(fin == NULL)
+    {
+        printf("Nu s-a putut deschide fisierul ce contine calea imaginii pentru criptat si cheia secreta/n");
+        return 0;
+    }
+    char forCriptFileName[100], secretKeyFileName[100], encriptedFileName[100];
+    fscanf(fin, "%s", &forCriptFileName);
+    fscanf(fin, "%s", &encriptedFileName);
+    fscanf(fin, "%s", &secretKeyFileName);
+    criptBMP(forCriptFileName, encriptedFileName, secretKeyFileName);
+    fclose(fin);
+
+    // (*)
+
+    // (**) Decriptarea unei imagini BMP; calea imaginii criptate, a celei decriptate si cea a cheii secrete
+    // au fost citite din fisierul forDecripting.txt
+
+    fin = fopen("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\forDecripting.txt", "r");
+    if(fin == NULL)
+    {
+        printf("Nu s-a putut deschide fisierul ce contine calea imaginii criptate si a cheii secrete\n");
+        return 0;
+    }
+    char decriptedFileName[100];
+    fscanf(fin, "%s", &encriptedFileName);
+    fscanf(fin, "%s", &decriptedFileName);
+    fscanf(fin, "%s", &secretKeyFileName);
+    decriptBMP(decriptedFileName, encriptedFileName, secretKeyFileName);
+    fclose(fin);
+
+    // (**)
+
+    //(***) Afisarea pe ecran a valorilor testului chi-squared pe fiecare canal de culoare
+
+    printf("Valorile testului chi-squared pentru imaginea initiala sunt:\n");
+    chiSquaredValues(decriptedFileName);
+    printf("Valorile testului chi-squared pentru imaginea criptata sunt:\n");
+    chiSquaredValues(encriptedFileName);
+
+    //(***)
+
+    //(****) Rularea operatiei de template-matching pentru o imagine BMP si o colectie de sabloane.
+    // Cale imaginii va fi citita din fisierul imagePath.txt, iar pentru sabloane sabloane.txt
+
+    fin = fopen("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\imagePath.txt", "r");
+    if(fin == NULL)
+    {
+        printf("Fisierul ce contine calea imaginii test pentru template matching nu a putut fi deschis\n");
+        return 0;
+    }
+    char testTemplateMatchingFileName[100];
+    fscanf(fin, "%s", &testTemplateMatchingFileName);
+    struct image originalImage = loadBMP(testTemplateMatchingFileName);
+    struct image grayscaleImage = grayscale(testTemplateMatchingFileName);
+    fclose(fin);
+
+    char sabloaneFileName[100] = "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\sabloane.txt";
+    struct arrayPairPoint corelationTable = getCorelations(grayscaleImage, sabloaneFileName, 0.5);
+
+    //(****)
+
+    //(*****) Rularea functiei de eliminare a non-maximelor si desenarea chenarelor
+
     struct image sablon = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\cifra7.bmp");
-    struct image grayscaleImage = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test.bmp");
-    struct image originalImage = loadBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\test.bmp");
-
-   /* struct arrayPairPoint result = templateMatching(grayscaleImage, sablon, 0.7);
-    struct pixel color; color.r = 250; color.b = 200; color.g = 0;
-    int i;
-    struct pairPoint f;
-    f.x = 387;
-    f.y = 184;
-    //image = drawBorder(image, f, color, sablon);
-    for(i = 0; i < result.size; i++){
-        originalImage = drawBorder(originalImage, result.arr[i], color, sablon);}
-    createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\test7.bmp", originalImage);
-*/
-
-    struct arrayPairPoint corelationTable = getCorelations(grayscaleImage, "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\sabloane.txt");
-
-    int i;
     qsort(corelationTable.arr, corelationTable.size, sizeof(struct pairPoint), cmp);
     corelationTable = nonMaxElimination(corelationTable, sablon);
-    printf("%d\n", corelationTable.size);
-    /*struct pixel color; color.r = 250; color.b = 200; color.g = 0;
-    for(i = 0; i < corelationTable.size; i++)
-        originalImage = drawBorder(originalImage, corelationTable.arr[i], color, sablon);
-    createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\imagineFinala.bmp", originalImage);
-     */
     drawFinalImage(originalImage, sablon, corelationTable);
-     return 0;
+
+    //(*****)
+
+    return 0;
 }
