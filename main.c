@@ -1,17 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-// definim o structura de date care permite memorarea unui pixel
 
 struct pixel
 {
     unsigned char r;
     unsigned char g;
     unsigned char b;
-};
-union binarInt{
-    int x;
-    unsigned char byteRepr[4];
 };
 
 struct image
@@ -20,6 +15,12 @@ struct image
     struct pixel *content;
     unsigned int width, height, padding, contentSize;
 };
+
+union binarInt{
+    int x;
+    unsigned char byteRepr[4];
+};
+
 
 struct pairPoint
 {
@@ -96,7 +97,6 @@ struct image loadBMP(char *fileName)
         }
         fseek(filePointer, image.padding, SEEK_CUR);
     }
-    fflush(filePointer);
     fclose(filePointer);
     return image;
 
@@ -107,7 +107,7 @@ void createBMP(char *fileName, struct image image)
     FILE* filePointer;
     filePointer = fopen(fileName, "wb");
     if(filePointer == NULL){
-        printf("There was an error while opening the file");
+        printf("There was an error while opening the file %s\n", fileName);
         fclose(filePointer);
         return ;}
     int i, j;
@@ -155,7 +155,7 @@ void criptBMP(char *fileSource, char *fileDestination, char *fileKey)
     }
     for(i = 0; i < pixelSize; i++)
         cripImage.content[permutation[i]] = image.content[i];
-    //createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\cript.bmp", cripImage);
+
     union binarInt key, random;
     key.x = startingValue;
     random.x = randomSequence[pixelSize];
@@ -170,8 +170,8 @@ void criptBMP(char *fileSource, char *fileDestination, char *fileKey)
         cripImage.content[i].b = cripImage.content[i - 1].b ^ cripImage.content[i].b ^ random.byteRepr[0];
     }
     createBMP(fileDestination, cripImage);
-    free(cripImage.content);
-    free(image.content);
+    free(cripImage.content); free(cripImage.header);
+    free(image.content); free(image.header);
     free(randomSequence);
     free(permutation);
 }
@@ -228,11 +228,11 @@ void decriptBMP(char* fileSource, char* fileCripted, char* fileKey)
     for(i = 0; i < pixelSize; i++)
         decriptedImage.content[inversPerm[i]] = finalImage.content[i];
     createBMP(fileSource, decriptedImage);
-    free(finalImage.content);
+    free(finalImage.content); free(finalImage.header);
     free(inversPerm);
     free(permutation);
-    free(criptedImage.content);
-    free(decriptedImage.content);
+    free(criptedImage.content); free(criptedImage.header);
+    free(decriptedImage.content); free(decriptedImage.header);
 }
 
 void chiSquaredValues(char* filePath) {
@@ -267,6 +267,19 @@ void chiSquaredValues(char* filePath) {
     printf("chi-squared-red = %.2f \n chi-squared-green = %.2f \n chi-squared-blue = %.2f \n", chiRed, chiGreen, chiBlue);
 }
 
+struct image grayscale(char* fileSource)
+{
+    struct image image = loadBMP(fileSource);
+    int i;
+    unsigned char aux;
+    for(i = 0; i < image.width * image.height; i++) {
+        aux = 0.299 * image.content[i].r + 0.587 * image.content[i].g + 0.114 * image.content[i].b;
+        image.content[i].r = image.content[i].g = image.content[i].b = aux;
+    }
+    return image;
+}
+
+
 float corr(int x, int y, float SPrime, float deviationS, struct image sablon, struct image image)
 {
     int i, j;
@@ -297,18 +310,6 @@ float corr(int x, int y, float SPrime, float deviationS, struct image sablon, st
     corelation = corelation / n;
     return corelation;
 }
-struct image grayscale(char* fileSource)
-{
-    struct image image = loadBMP(fileSource);
-    int i;
-    unsigned char aux;
-    for(i = 0; i < image.width * image.height; i++) {
-        aux = 0.299 * image.content[i].r + 0.587 * image.content[i].g + 0.114 * image.content[i].b;
-        image.content[i].r = image.content[i].g = image.content[i].b = aux;
-    }
-    return image;
-}
-
 struct arrayPairPoint templateMatching(struct image image, struct image sablon, float ps)
 {
     int i, j, curent = 0;
@@ -335,8 +336,9 @@ struct arrayPairPoint templateMatching(struct image image, struct image sablon, 
         }
     deviationS = deviationS / (pixelDimSablon - 1);
     deviationS = sqrtf(deviationS);
+
     // (**)
-    curent = 0;
+
     struct arrayPairPoint result;
     result.arr = malloc(sizeof(struct pairPoint));
     struct pairPoint *aux;
@@ -452,7 +454,6 @@ struct arrayPairPoint getCorelations(struct image grayscaleImage, const char *sa
     int numarSabloane, i, j;
     char fileName[100];
     struct image sablon;
-    struct pixel color;
     struct arrayPairPoint curentArr, corelationTable;
     corelationTable.size = 0;
     corelationTable.arr = malloc(sizeof(struct pairPoint));
@@ -480,6 +481,7 @@ struct arrayPairPoint getCorelations(struct image grayscaleImage, const char *sa
             index++;
         }
     }
+    fclose(fin);
     return corelationTable;
 }
 
@@ -543,7 +545,7 @@ int overlapingArea(struct pairPoint p1, struct pairPoint p2, struct image sablon
 }
 struct arrayPairPoint nonMaxElimination(struct arrayPairPoint corelationTable, struct image sablon)
 {
-    int i, j, nr = 0;
+    int i, j;
     float areaOfTwoRectangles = 2 * sablon.width * sablon.height;
     for(i = 0; i < corelationTable.size - 1; i++)
         for(j = i + 1; j < corelationTable.size; j++)
@@ -556,13 +558,12 @@ struct arrayPairPoint nonMaxElimination(struct arrayPairPoint corelationTable, s
                 if(suprapunere > 0.2) {
                     deleteElement(&corelationTable.arr, &corelationTable.size, j);
                 }
-                //printf("%.2f\n", suprapunere);
             }
         }
     return corelationTable;
 }
 
-void drawFinalImage(struct image originalImage, struct image sablon, struct arrayPairPoint corelationTable)
+void drawFinalImage(struct image originalImage, struct image sablon, struct arrayPairPoint corelationTable, const char* finalImageDestination)
 {
     int i;
     struct pixel color;
@@ -571,7 +572,7 @@ void drawFinalImage(struct image originalImage, struct image sablon, struct arra
         color = chooseColor(corelationTable.arr[i].nrSablon);
         originalImage = drawBorder(originalImage, corelationTable.arr[i], color, sablon);
     }
-    createBMP("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\imagineFinala.bmp", originalImage);
+    createBMP(finalImageDestination, originalImage);
 
 }
 
@@ -647,9 +648,14 @@ int main()
     struct image sablon = grayscale("E:\\INFO\\FMI\\ProgProced\\ProiectLab\\Sabloane\\cifra7.bmp");
     qsort(corelationTable.arr, corelationTable.size, sizeof(struct pairPoint), cmp);
     corelationTable = nonMaxElimination(corelationTable, sablon);
-    drawFinalImage(originalImage, sablon, corelationTable);
+    drawFinalImage(originalImage, sablon, corelationTable, "E:\\INFO\\FMI\\ProgProced\\ProiectLab\\imageFinala.bmp");
 
     //(*****)
+
+    free(originalImage.content); free(originalImage.header);
+    free(grayscaleImage.content); free(grayscaleImage.header);
+    free(sablon.content); free(sablon.content);
+    free(corelationTable.arr);
 
     return 0;
 }
